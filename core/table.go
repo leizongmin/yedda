@@ -2,15 +2,13 @@ package core
 
 import "crypto/md5"
 
-type HashKey [16]byte
-
 type Table struct {
 	Data map[HashKey]uint32
-	Hash map[HashKey][]byte
+	Hash HashKeyMap
 }
 
 func NewTable() *Table {
-	return &Table{Data: make(map[HashKey]uint32), Hash: make(map[HashKey][]byte)}
+	return &Table{Data: make(map[HashKey]uint32), Hash: make(HashKeyMap)}
 }
 
 func (t *Table) Incr(key []byte, n uint32) uint32 {
