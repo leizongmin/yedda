@@ -5,14 +5,14 @@ import (
 )
 
 func TestNewTable(t *testing.T) {
-	table := NewTable()
+	table := NewTable("")
 	if table == nil {
 		t.Error("expected Table pointer")
 	}
 }
 
 func TestTable_Incr(t *testing.T) {
-	table := NewTable()
+	table := NewTable("")
 	if c := table.Incr([]byte("abc"), 1); c != 1 {
 		t.Error("expected 1")
 	}
@@ -31,7 +31,7 @@ func TestTable_Incr(t *testing.T) {
 }
 
 func TestTable_Destroy(t *testing.T) {
-	table := NewTable()
+	table := NewTable("")
 	table.Incr([]byte("666"), 1)
 	table.Incr([]byte("abcdefg"), 1)
 	table.Destroy()
