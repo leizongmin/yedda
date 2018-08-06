@@ -33,13 +33,13 @@ func NewService(options Options) *Service {
 	if options.DatabaseSize > 0 {
 		db = options.DatabaseSize
 	}
-	td := DefaultTimeAccuracy
+	ta := DefaultTimeAccuracy
 	if options.TimeAccuracy > 0 {
-		td = options.TimeAccuracy
+		ta = options.TimeAccuracy
 	}
 	return &Service{
 		database: core.NewDataBase(db),
-		ticker:   time.NewTicker(td),
+		ticker:   time.NewTicker(ta),
 		cmdReq:   make(chan *cmdReq),
 		cmdRes:   make(chan uint32),
 		stopChan: make(chan bool),

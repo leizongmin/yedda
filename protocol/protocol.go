@@ -7,7 +7,7 @@ import (
 
 type Package struct {
 	Version uint16 `json:"version"` // 版本
-	Op      uint8  `json:"op"`      // 操作类型
+	Op      OpType `json:"op"`      // 操作类型
 	Length  uint16 `json:"length"`  // 数据长度
 	Data    []byte `json:"data"`    // 数据内容
 }
@@ -19,13 +19,17 @@ const (
 	OpPing
 	OpPong
 	OpGet
+	OpGetResult
 	OpIncr
+	OpIncrResult
 )
+
+const CurrentVersion = 1
 
 func NewPackage(version uint16, op OpType, data []byte) *Package {
 	return &Package{
 		Version: version,
-		Op:      uint8(op),
+		Op:      op,
 		Length:  uint16(len(data)),
 		Data:    data,
 	}
@@ -35,6 +39,10 @@ func NewPackageFromReader(r io.Reader) (p *Package, err error) {
 	p = &Package{}
 	err = p.UnPack(r)
 	return p, err
+}
+
+func PackToWriter(w io.Writer, version uint16, op OpType, data []byte) error {
+	return NewPackage(version, op, data).Pack(w)
 }
 
 func (p *Package) Pack(w io.Writer) (err error) {
