@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type Server struct {
 	closed   bool
 	service  *service.Service
 	options  Options
+	logger   log.Logger
 }
 
 type Options struct {
@@ -24,6 +26,7 @@ type Options struct {
 	Address      string
 	TimeAccuracy time.Duration
 	DatabaseSize uint32
+	EnableLog    bool
 }
 
 func NewServer(options Options) (s *Server, err error) {
@@ -78,20 +81,28 @@ func (s *Server) Loop() error {
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	addr := conn.RemoteAddr()
-	log.Printf("Accept new connection: %s", addr)
+	logger := log.New(os.Stdout, "["+addr.String()+"] ", log.Ltime)
+	enableLog := s.options.EnableLog
+	if enableLog {
+		logger.Println("connected")
+	}
 	for {
 		var err error
 		p, err := protocol.NewPackageFromReader(conn)
 		if err != nil {
-			if err == io.EOF {
-				log.Printf("Connection %s closed", addr)
-			} else {
-				log.Printf("Read from connection %s error: %s", addr, err)
+			if enableLog {
+				if err == io.EOF {
+					logger.Println("connection closed")
+				} else {
+					logger.Printf("read error: %s", err)
+				}
 			}
 			break
 		}
 		if p.Version != protocol.CurrentVersion {
-			log.Printf("Ignore protocol version %d from %s", p.Version, addr)
+			if enableLog {
+				logger.Printf("ignore protocol version %d", p.Version)
+			}
 			continue
 		}
 		switch p.Op {
@@ -112,10 +123,14 @@ func (s *Server) handleConnection(conn net.Conn) {
 				err = protocol.PackToWriter(conn, protocol.CurrentVersion, protocol.OpIncrResult, protocol.Uint32ToBytes(c))
 			}
 		default:
-			log.Printf("Unknown OpType %+v from connection %s", p, addr)
+			if enableLog {
+				logger.Printf("unknown op type %+v", p)
+			}
 		}
-		if err != nil {
-			log.Printf("Unexpected error from connection %s: %s", addr, err)
+		if enableLog {
+			if err != nil {
+				logger.Printf("unexpected error: %s", err)
+			}
 		}
 	}
 }

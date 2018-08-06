@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	s, err := NewServer(Options{DatabaseSize: 2})
+	s, err := NewServer(Options{DatabaseSize: 2, EnableLog: true})
 	assert.Equal(t, nil, err)
 	go s.Loop()
 
@@ -38,4 +38,26 @@ func TestNewServer(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 	s.Close()
+}
+
+func BenchmarkNewServer_Incr(b *testing.B) {
+	s, _ := NewServer(Options{})
+	defer s.Close()
+	go s.Loop()
+	c, _ := client.NewClient(client.Options{})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Incr("abc", "1234", 100)
+	}
+}
+
+func BenchmarkNewServer_Get(b *testing.B) {
+	s, _ := NewServer(Options{})
+	defer s.Close()
+	go s.Loop()
+	c, _ := client.NewClient(client.Options{})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Get("abc", "1234", 100)
+	}
 }
