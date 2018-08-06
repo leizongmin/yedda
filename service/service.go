@@ -52,10 +52,28 @@ func (s *Service) Destroy() {
 	s.database.Destroy()
 }
 
-func (s *Service) CmdIncr(db uint32, ns string, milliseconds uint32, key []byte, count uint32) uint32 {
-	return s.database.Get(db).Get(ns, time.Duration(milliseconds)*time.Millisecond).Incr(key, count)
+type CmdArg struct {
+	db           uint32
+	ns           string
+	milliseconds uint32
+	key          []byte
+	count        uint32
 }
 
-func (s *Service) CmdGet(db uint32, ns string, milliseconds uint32, key []byte) uint32 {
-	return s.database.Get(db).Get(ns, time.Duration(milliseconds)*time.Millisecond).Get(key)
+func NewCmdArg(db uint32, ns string, milliseconds uint32, key []byte, count uint32) *CmdArg {
+	return &CmdArg{
+		db:           db,
+		ns:           ns,
+		milliseconds: milliseconds,
+		key:          key,
+		count:        count,
+	}
+}
+
+func (s *Service) CmdIncr(a *CmdArg) uint32 {
+	return s.database.Get(a.db).Get(a.ns, time.Duration(a.milliseconds)*time.Millisecond).Incr(a.key, a.count)
+}
+
+func (s *Service) CmdGet(a *CmdArg) uint32 {
+	return s.database.Get(a.db).Get(a.ns, time.Duration(a.milliseconds)*time.Millisecond).Get(a.key)
 }
