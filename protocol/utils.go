@@ -9,3 +9,7 @@ func Uint32ToBytes(v uint32) []byte {
 	binary.BigEndian.PutUint32(b, v)
 	return b
 }
+
+func BytesToUint32(b []byte) uint32 {
+	return binary.BigEndian.Uint32(b)
+}
