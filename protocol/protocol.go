@@ -46,19 +46,12 @@ func PackToWriter(w io.Writer, version uint16, op OpType, data []byte) error {
 }
 
 func (p *Package) Pack(w io.Writer) (err error) {
-	err = binary.Write(w, binary.BigEndian, &p.Version)
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, binary.BigEndian, &p.Op)
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, binary.BigEndian, &p.Length)
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, binary.BigEndian, &p.Data)
+	b := make([]byte, 5)
+	binary.BigEndian.PutUint16(b, p.Version)
+	b[2] = byte(p.Op)
+	binary.BigEndian.PutUint16(b[3:], p.Length)
+	w.Write(b)
+	w.Write(p.Data)
 	return err
 }
 
