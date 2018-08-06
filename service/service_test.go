@@ -73,3 +73,75 @@ func TestNewServiceParallels(t *testing.T) {
 	time.Sleep(time.Second)
 	s.Stop()
 }
+
+func BenchmarkService_Incr_1(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "a", 100, []byte("b"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Incr(a)
+	}
+}
+
+func BenchmarkService_Incr_10(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "abcdefghi", 100, []byte("abcdefghi"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Incr(a)
+	}
+}
+
+func BenchmarkService_Incr_36(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "abcdefghijklmnopqrstuvwxyz1234567890", 100, []byte("abcdefghijklmnopqrstuvwxyz1234567890"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Incr(a)
+	}
+}
+
+func BenchmarkService_Get_1(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "a", 100, []byte("b"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Get(a)
+	}
+}
+
+func BenchmarkService_Get10(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "abcdefghi", 100, []byte("abcdefghi"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Get(a)
+	}
+}
+
+func BenchmarkService_Get_36(b *testing.B) {
+	s := NewService(Options{DatabaseSize: 1, TimeAccuracy: 10 * time.Millisecond})
+	s.Start()
+	defer s.Destroy()
+
+	a := NewCmdArg(0, "abcdefghijklmnopqrstuvwxyz1234567890", 100, []byte("abcdefghijklmnopqrstuvwxyz1234567890"), 1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Get(a)
+	}
+}
