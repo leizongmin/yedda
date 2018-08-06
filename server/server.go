@@ -18,7 +18,6 @@ type Server struct {
 	closed   bool
 	service  *service.Service
 	options  Options
-	logger   log.Logger
 }
 
 type Options struct {
@@ -49,6 +48,9 @@ func NewServer(options Options) (s *Server, err error) {
 		}),
 		options: options,
 	}
+	if options.EnableLog {
+		log.Printf("server listen on %s", listener.Addr())
+	}
 	return s, err
 }
 
@@ -61,6 +63,9 @@ func (s *Server) Close() error {
 	if err == nil {
 		s.closed = true
 		s.service.Destroy()
+		if s.options.EnableLog {
+			log.Println("server closed")
+		}
 	}
 	return err
 }
