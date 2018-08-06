@@ -88,20 +88,6 @@ func (s *Service) Destroy() {
 	s.database.Destroy()
 }
 
-// 调用参数
-type CmdArg struct {
-	// 数据库号，>= 0
-	Db uint32
-	// 命名空间
-	Ns string
-	// 有效期
-	Milliseconds uint32
-	// 键名
-	Key []byte
-	// 增加数量
-	Count uint32
-}
-
 type cmdReq struct {
 	Cmd cmdType
 	Arg *CmdArg
@@ -114,17 +100,6 @@ const (
 	cmdIncr
 	cmdGet
 )
-
-// 创建命令调用参数对象
-func NewCmdArg(db uint32, ns string, milliseconds uint32, key []byte, count uint32) *CmdArg {
-	return &CmdArg{
-		Db:           db,
-		Ns:           ns,
-		Milliseconds: milliseconds,
-		Key:          key,
-		Count:        count,
-	}
-}
 
 // 执行 INCR 命令
 func (s *Service) Incr(a *CmdArg) uint32 {

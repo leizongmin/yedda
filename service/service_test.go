@@ -1,11 +1,23 @@
 package service
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
 )
+
+func TestNewCmdArg(t *testing.T) {
+	a := NewCmdArg(1, "abc", 123, []byte("efg456"), 99)
+	fmt.Println(a)
+	b, err := a.Bytes()
+	assert.Equal(t, nil, err)
+	fmt.Println(b)
+	a2, err := NewCmdArgFromBytes(b)
+	assert.Equal(t, nil, err)
+	fmt.Println(a2)
+}
 
 func TestNewService(t *testing.T) {
 	s := NewService(Options{DatabaseSize: 2, TimeAccuracy: 10 * time.Millisecond})
