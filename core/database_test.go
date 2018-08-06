@@ -1,28 +1,20 @@
 package core
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestNewDataBase(t *testing.T) {
 	d := NewDataBase(16)
-	if d == nil {
-		t.Error("unexpected nil Database pointer")
-	}
-	if len(d.Data) != 16 {
-		t.Error("unexpected database size")
-	}
-	d2 := NewDataBase(32)
-	if d2 == nil {
-		t.Error("unexpected nil Database pointer")
-	}
-	if len(d2.Data) != 32 {
-		t.Error("unexpected database size")
-	}
-	d3 := NewDataBase(512)
-	if d3 == nil {
-		t.Error("unexpected nil Database pointer")
-	}
-	if len(d3.Data) != 512 {
-		t.Error("unexpected database size")
-	}
+	assert.NotEqual(t, nil, d)
+	assert.Equal(t, 16, len(d.Data))
 
+	d2 := NewDataBase(32)
+	assert.NotEqual(t, nil, d2)
+	assert.Equal(t, 32, len(d2.Data))
+
+	d3 := NewDataBase(512)
+	assert.NotEqual(t, nil, d3)
+	assert.Equal(t, 512, len(d3.Data))
 }

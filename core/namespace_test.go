@@ -1,30 +1,26 @@
 package core
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestNewNamespace(t *testing.T) {
 	n := NewNamespace(0)
-	if n == nil {
-		t.Error("unexpected nil Namespace pointer")
-	}
+	assert.NotEqual(t, nil, n)
 }
 
 func TestNamespace_GetTable(t *testing.T) {
 	n := NewNamespace(0)
 	a := n.Get("abc", 1)
-	if a == nil {
-		t.Error("unexpected nil Table pointer")
-	}
+	assert.NotEqual(t, nil, a)
+
 	b := n.Get("efg", 1)
-	if b == nil {
-		t.Error("unexpected nil Table pointer")
-	}
-	if a == b {
-		t.Error("get different table name")
-	}
-	if a != n.Get("abc", 1) {
-		t.Error("get the same table name")
-	}
+	assert.NotEqual(t, nil, b)
+	assert.NotEqual(t, b, a)
+
+	assert.Equal(t, a, n.Get("abc", 1))
+
 	a.Incr([]byte("11111"), 1)
 	b.Incr([]byte("11111"), 1)
 }
@@ -35,7 +31,5 @@ func TestNamespace_Destroy(t *testing.T) {
 	n.Get("b", 1)
 	n.Get("c", 1)
 	n.Destroy()
-	if n.Data != nil {
-		t.Errorf("expected namespace.Data nil pointer")
-	}
+	assert.Equal(t, 0, len(n.Data))
 }

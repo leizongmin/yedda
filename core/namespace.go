@@ -34,7 +34,7 @@ func (n *Namespace) addToExpiresQueue(name string, duration time.Duration) {
 	//fmt.Println("addToExpiresQueue", n.DbNum, name, duration, v.Expires)
 }
 
-/// 获取指定 name & duration 的数据表，如果不存在则先初始化
+// 获取指定 name & duration 的数据表，如果不存在则先初始化
 func (n *Namespace) Get(name string, duration time.Duration) *Table {
 	if _, exists := n.Data[duration]; !exists {
 		// 如果指定 duration 不存在任何数据，先初始化
@@ -49,7 +49,7 @@ func (n *Namespace) Get(name string, duration time.Duration) *Table {
 	return n.Data[duration][name]
 }
 
-/// 删除指定 name & duration 的数据表
+// 删除指定 name & duration 的数据表
 func (n *Namespace) Delete(name string, duration time.Duration) {
 	if _, exists := n.Data[duration]; exists {
 		delete(n.Data[duration], name)
@@ -61,7 +61,7 @@ func (n *Namespace) Delete(name string, duration time.Duration) {
 	//fmt.Printf("%x #%d Delete %s %s %v\n", &n, n.DbNum, name, duration, n.Data)
 }
 
-/// 删除已经过期的 namespace
+// 删除已经过期的 namespace
 func (n *Namespace) DeleteExpired(t time.Time) {
 	queue := make([]NamespaceResetItem, 0)
 	// 处理已经过期的数据
@@ -82,7 +82,7 @@ func (n *Namespace) DeleteExpired(t time.Time) {
 	//fmt.Printf("%x #%d DeleteExpired %v\n", &n, n.DbNum, n.Data)
 }
 
-/// 销毁
+// 销毁
 func (n *Namespace) Destroy() {
 	for d := range n.Data {
 		for k := range n.Data[d] {
