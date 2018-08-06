@@ -5,75 +5,141 @@ import (
 	"time"
 )
 
-const DefaultTickerDuration = 100 * time.Millisecond
-const DefaultDatabaseSize = 16
+// 默认时间精度，100ms
+const DefaultTimeAccuracy = 100 * time.Millisecond
+
+// 默认数据库数量，1
+const DefaultDatabaseSize = 1
 
 type Service struct {
 	database *core.Database
 	ticker   *time.Ticker
+	cmdReq   chan *cmdReq
+	cmdRes   chan uint32
+	stopChan chan bool
+	isStop   bool
 }
 
 type Options struct {
-	DatabaseSize   uint32
-	TickerDuration time.Duration
+	// 数据库数量，>= 1
+	DatabaseSize uint32
+	// 时间精度
+	TimeAccuracy time.Duration
 }
 
+// 创建新服务实例
 func NewService(options Options) *Service {
 	db := uint32(DefaultDatabaseSize)
 	if options.DatabaseSize > 0 {
 		db = options.DatabaseSize
 	}
-	td := DefaultTickerDuration
-	if options.TickerDuration > 0 {
-		td = options.TickerDuration
+	td := DefaultTimeAccuracy
+	if options.TimeAccuracy > 0 {
+		td = options.TimeAccuracy
 	}
 	return &Service{
 		database: core.NewDataBase(db),
 		ticker:   time.NewTicker(td),
+		cmdReq:   make(chan *cmdReq),
+		cmdRes:   make(chan uint32),
+		stopChan: make(chan bool),
+		isStop:   true,
 	}
 }
 
+// 开始服务
 func (s *Service) Start() {
+	s.isStop = false
 	go func() {
 		for {
-			t := <-s.ticker.C
-			//fmt.Printf("ticker %s\n", t)
-			s.database.DeleteExpired(t)
+			select {
+			case <-s.stopChan:
+				break
+			case t := <-s.ticker.C:
+				//fmt.Println("ticker", t)
+				s.database.DeleteExpired(t)
+			case req := <-s.cmdReq:
+				if req != nil {
+					//fmt.Println("req", req)
+					a := req.Arg
+					switch req.Cmd {
+					case cmdGet:
+						s.cmdRes <- s.database.Get(a.Db).Get(a.Ns, time.Duration(a.Milliseconds)*time.Millisecond).Incr(a.Key, a.Count)
+					case cmdIncr:
+						s.cmdRes <- s.database.Get(a.Db).Get(a.Ns, time.Duration(a.Milliseconds)*time.Millisecond).Incr(a.Key, a.Count)
+					}
+				}
+			}
 		}
 	}()
 }
 
+// 停止服务
 func (s *Service) Stop() {
+	s.isStop = true
+	s.stopChan <- true
 	s.ticker.Stop()
 }
 
+// 销毁服务
 func (s *Service) Destroy() {
-	s.ticker.Stop()
+	s.Stop()
+	close(s.cmdReq)
 	s.database.Destroy()
 }
 
+// 调用参数
 type CmdArg struct {
-	db           uint32
-	ns           string
-	milliseconds uint32
-	key          []byte
-	count        uint32
+	// 数据库号，>= 0
+	Db uint32
+	// 命名空间
+	Ns string
+	// 有效期
+	Milliseconds uint32
+	// 键名
+	Key []byte
+	// 增加数量
+	Count uint32
 }
 
+type cmdReq struct {
+	Cmd cmdType
+	Arg *CmdArg
+}
+
+type cmdType uint8
+
+const (
+	_ cmdType = iota
+	cmdIncr
+	cmdGet
+)
+
+// 创建命令调用参数对象
 func NewCmdArg(db uint32, ns string, milliseconds uint32, key []byte, count uint32) *CmdArg {
 	return &CmdArg{
-		db:           db,
-		ns:           ns,
-		milliseconds: milliseconds,
-		key:          key,
-		count:        count,
+		Db:           db,
+		Ns:           ns,
+		Milliseconds: milliseconds,
+		Key:          key,
+		Count:        count,
 	}
 }
 
-func (s *Service) CmdIncr(a *CmdArg) uint32 {
-	return s.database.Get(a.db).Get(a.ns, time.Duration(a.milliseconds)*time.Millisecond).Incr(a.key, a.count)
+// 执行 INCR 命令
+func (s *Service) Incr(a *CmdArg) uint32 {
+	if s.isStop {
+		return 1
+	}
+	s.cmdReq <- &cmdReq{Cmd: cmdIncr, Arg: a}
+	return <-s.cmdRes
 }
 
-func (s *Service) CmdGet(a *CmdArg) uint32 {
-	return s.database.Get(a.db).Get(a.ns, time.Duration(a.milliseconds)*time.Millisecond).Get(a.key)
+// 执行 GET 命令
+func (s *Service) Get(a *CmdArg) uint32 {
+	if s.isStop {
+		return 1
+	}
+	s.cmdReq <- &cmdReq{Cmd: cmdGet, Arg: a}
+	return <-s.cmdRes
 }
