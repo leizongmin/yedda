@@ -7,16 +7,11 @@ import (
 
 // 调用参数
 type CmdArg struct {
-	// 数据库号，>= 0
-	Db uint32
-	// 命名空间
-	Ns string
-	// 有效期
-	Milliseconds uint32
-	// 键名
-	Key []byte
-	// 增加数量
-	Count uint32
+	Db           uint32 `json:"db"`           // 数据库号，>= 0
+	Ns           string `json:"ns"`           // 命名空间
+	Milliseconds uint32 `json:"milliseconds"` // 有效期
+	Key          []byte `json:"key"`          // 键名
+	Count        uint32 `json:"count"`        // 增加数量
 }
 
 // 创建命令调用参数对象
