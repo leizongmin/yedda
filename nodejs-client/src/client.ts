@@ -20,6 +20,10 @@ export class Client extends events.EventEmitter {
   protected readonly socket: net.Socket;
   protected readonly db: number;
   protected buffer: Buffer = Buffer.alloc(0);
+  protected callback: Record<string, Array<[Function, Function]>> = {
+    [protocol.OpType.OpGetResult]: [],
+    [protocol.OpType.OpIncrResult]: [],
+  };
 
   constructor(options: Partial<ClientOptions> = {}) {
     super();
@@ -28,20 +32,11 @@ export class Client extends events.EventEmitter {
     assert(this.db >= 0, `invalid db number: ${this.db}`);
     this.socket = net.createConnection(port, host, () => {
       this.emit("connect");
-      this.send(protocol.OpType.OpPing, Buffer.alloc(0));
-      this.send(
-        protocol.OpType.OpIncr,
-        protocol.packCmdArg({
-          db: this.db,
-          ns: "hello",
-          milliseconds: 299,
-          key: "woaa",
-          count: 1,
-        }),
-      );
     });
     this.socket.on("data", data => {
-      console.log(data);
+      // console.log("on data", data);
+      this.buffer = Buffer.concat([this.buffer, data]);
+      this.processBuffer();
     });
     this.socket.on("error", err => {
       this.emit("error", err);
@@ -49,6 +44,40 @@ export class Client extends events.EventEmitter {
     this.socket.on("close", () => {
       this.emit("close");
     });
+  }
+
+  protected processBuffer() {
+    try {
+      while (this.buffer.length > 0) {
+        const { data, rest } = protocol.unpack(this.buffer);
+        this.buffer = rest;
+        switch (data.op) {
+          case protocol.OpType.OpGetResult:
+            {
+              const v = data.data.readUInt32BE(0);
+              const fn = this.callback[protocol.OpType.OpGetResult].shift();
+              if (fn) {
+                fn[0](v);
+              }
+            }
+            break;
+          case protocol.OpType.OpIncrResult:
+            {
+              const v = data.data.readUInt32BE(0);
+              const fn = this.callback[protocol.OpType.OpIncrResult].shift();
+              if (fn) {
+                fn[0](v);
+              }
+            }
+            break;
+          default:
+          // unknown
+        }
+      }
+    } catch (err) {
+      // RangeError: Index out of range
+      // console.log(err);
+    }
   }
 
   protected send(op: protocol.OpType, data: Buffer): Promise<any> {
@@ -61,7 +90,41 @@ export class Client extends events.EventEmitter {
           data,
         }),
       );
+      switch (op) {
+        case protocol.OpType.OpGet:
+          this.callback[protocol.OpType.OpGetResult].push([resolve, reject]);
+          break;
+        case protocol.OpType.OpIncr:
+          this.callback[protocol.OpType.OpIncrResult].push([resolve, reject]);
+          break;
+      }
     });
+  }
+
+  public incr(ns: string, milliseconds: number, key: string, count: number = 1): Promise<number> {
+    return this.send(
+      protocol.OpType.OpIncr,
+      protocol.packCmdArg({
+        db: this.db,
+        ns,
+        milliseconds,
+        key,
+        count,
+      }),
+    );
+  }
+
+  public get(ns: string, milliseconds: number, key: string): Promise<number> {
+    return this.send(
+      protocol.OpType.OpGet,
+      protocol.packCmdArg({
+        db: this.db,
+        ns,
+        milliseconds,
+        key,
+        count: 0,
+      }),
+    );
   }
 
   public close() {
@@ -78,7 +141,18 @@ function parseServerAddress(str: string): { host: string; port: number } {
 }
 
 async function test() {
+  function sleep(ms: number) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms);
+    });
+  }
   const c = new Client();
-  console.log(c);
+  // console.log(c);
+  for (let i = 0; i < Number.MAX_SAFE_INTEGER; i++) {
+    c.incr("hello", 1000, "www").then(console.log);
+    await sleep(0);
+    // c.incr("hello", 199, "www2", 2).then(console.log);
+    // c.incr("hello", 199, "www2", 5).then(console.log);
+  }
 }
 test().catch(console.log);
