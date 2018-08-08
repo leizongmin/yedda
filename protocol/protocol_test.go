@@ -7,15 +7,15 @@ import (
 )
 
 func TestNewPackage_Pack(t *testing.T) {
-	p := NewPackage(1, OpPing, []byte("abc"))
+	p := NewPackage(1, 2, OpPing, []byte("abc"))
 	buf := bytes.NewBuffer(make([]byte, 0))
 	err := p.Pack(buf)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, []byte{0, 1, 0, 1, 0, 3, 97, 98, 99}, buf.Bytes())
+	assert.Equal(t, []byte{0, 1, 0, 0, 0, 2, 0, 1, 0, 3, 97, 98, 99}, buf.Bytes())
 }
 
 func TestNewPackageFromReader(t *testing.T) {
-	p := NewPackage(2, OpPong, []byte("123456"))
+	p := NewPackage(2, 3, OpPong, []byte("123456"))
 	buf := bytes.NewBuffer(make([]byte, 0))
 	err := p.Pack(buf)
 	assert.Equal(t, nil, err)
@@ -25,7 +25,7 @@ func TestNewPackageFromReader(t *testing.T) {
 }
 
 func BenchmarkPackage_Pack(b *testing.B) {
-	p := NewPackage(1, OpPing, []byte("abc"))
+	p := NewPackage(1, 2, OpPing, []byte("abc"))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p.Pack(bytes.NewBuffer(make([]byte, 0)))
@@ -33,7 +33,7 @@ func BenchmarkPackage_Pack(b *testing.B) {
 }
 
 func BenchmarkNewPackageFromReader(b *testing.B) {
-	p := NewPackage(1, OpPing, []byte("abc"))
+	p := NewPackage(1, 2, OpPing, []byte("abc"))
 	buf := bytes.NewBuffer(make([]byte, 0))
 	p.Pack(buf)
 	buf2 := buf.Bytes()
