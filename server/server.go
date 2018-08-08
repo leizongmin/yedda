@@ -112,20 +112,20 @@ func (s *Server) handleConnection(conn net.Conn) {
 		}
 		switch p.Op {
 		case protocol.OpPing:
-			err = protocol.PackToWriter(conn, protocol.CurrentVersion, protocol.OpPong, p.Data)
+			err = s.reply(conn, p.ID, protocol.OpPong, p.Data)
 		case protocol.OpPong:
 			// do nothing
 		case protocol.OpGet:
 			a, err := service.NewCmdArgFromBytes(p.Data)
 			if err == nil {
 				c := s.service.Get(a)
-				err = protocol.PackToWriter(conn, protocol.CurrentVersion, protocol.OpGetResult, protocol.Uint32ToBytes(c))
+				err = s.reply(conn, p.ID, protocol.OpGetResult, protocol.Uint32ToBytes(c))
 			}
 		case protocol.OpIncr:
 			a, err := service.NewCmdArgFromBytes(p.Data)
 			if err == nil {
 				c := s.service.Incr(a)
-				err = protocol.PackToWriter(conn, protocol.CurrentVersion, protocol.OpIncrResult, protocol.Uint32ToBytes(c))
+				err = s.reply(conn, p.ID, protocol.OpIncrResult, protocol.Uint32ToBytes(c))
 			}
 		default:
 			if enableLog {
@@ -138,4 +138,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 			}
 		}
 	}
+}
+
+func (s *Server) reply(conn net.Conn, id uint32, op protocol.OpType, data []byte) error {
+	return protocol.PackToWriter(conn, protocol.CurrentVersion, id, op, data)
 }

@@ -6,17 +6,21 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 )
 
 const DefaultDialNetwork = "tcp"
 const DefaultDialAddress = "127.0.0.1:16789"
 
 type Client struct {
-	options    Options
-	closed     bool
-	conn       net.Conn
-	resultGet  chan uint32
-	resultIncr chan uint32
+	options          Options
+	closed           bool
+	conn             net.Conn
+	currentID        uint32
+	resultGet        chan uint32
+	resultIncr       chan uint32
+	pingMilliseconds uint32
+	resultPing       chan uint32
 }
 
 type Options struct {
@@ -37,11 +41,13 @@ func NewClient(options Options) (*Client, error) {
 		return nil, err
 	}
 	c := Client{
-		options:    options,
-		closed:     false,
-		conn:       conn,
-		resultGet:  make(chan uint32),
-		resultIncr: make(chan uint32),
+		options:          options,
+		closed:           false,
+		conn:             conn,
+		resultGet:        make(chan uint32),
+		resultIncr:       make(chan uint32),
+		pingMilliseconds: 0,
+		resultPing:       make(chan uint32),
 	}
 	go c.loop()
 	return &c, nil
@@ -68,9 +74,11 @@ func (c *Client) loop() {
 		}
 		switch p.Op {
 		case protocol.OpPing:
-			err = protocol.PackToWriter(conn, protocol.CurrentVersion, protocol.OpPong, p.Data)
+			err = c.send(protocol.OpPong, p.Data)
 		case protocol.OpPong:
-			// do nothing
+			t := protocol.BytesToUint32(p.Data)
+			c.pingMilliseconds = getMillisecondsTimestamp() - t
+			c.resultPing <- c.pingMilliseconds
 		case protocol.OpGetResult:
 			c.resultGet <- protocol.BytesToUint32(p.Data)
 		case protocol.OpIncrResult:
@@ -84,13 +92,27 @@ func (c *Client) loop() {
 	}
 }
 
+func (c *Client) send(op protocol.OpType, data []byte) error {
+	c.currentID++
+	return protocol.PackToWriter(c.conn, protocol.CurrentVersion, c.currentID, op, data)
+}
+
+func (c *Client) Ping() (r uint32, err error) {
+	err = c.send(protocol.OpPing, protocol.Uint32ToBytes(getMillisecondsTimestamp()))
+	if err != nil {
+		return r, err
+	}
+	r = <-c.resultPing
+	return r, err
+}
+
 func (c *Client) Get(ns string, key string, milliseconds uint32) (r uint32, err error) {
 	a := service.NewCmdArg(c.options.Db, ns, milliseconds, []byte(key), 0)
 	b, err := a.Bytes()
 	if err != nil {
 		return r, err
 	}
-	err = protocol.PackToWriter(c.conn, protocol.CurrentVersion, protocol.OpGet, b)
+	err = c.send(protocol.OpGet, b)
 	if err != nil {
 		return r, err
 	}
@@ -108,10 +130,14 @@ func (c *Client) IncrN(ns string, key string, milliseconds uint32, count uint32)
 	if err != nil {
 		return r, err
 	}
-	err = protocol.PackToWriter(c.conn, protocol.CurrentVersion, protocol.OpIncr, b)
+	err = c.send(protocol.OpIncr, b)
 	if err != nil {
 		return r, err
 	}
 	r = <-c.resultIncr
 	return r, err
+}
+
+func getMillisecondsTimestamp() uint32 {
+	return uint32(time.Now().UnixNano() / int64(time.Millisecond))
 }
