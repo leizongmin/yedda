@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -12,16 +13,15 @@ type Package struct {
 	Data    []byte `json:"data"`    // 数据内容
 }
 
-type OpType uint8
+type OpType uint16
 
 const (
-	_ OpType = iota
-	OpPing
-	OpPong
-	OpGet
-	OpGetResult
-	OpIncr
-	OpIncrResult
+	OpPing       = 0x1
+	OpPong       = 0x2
+	OpGet        = 0x3
+	OpGetResult  = 0x4
+	OpIncr       = 0x5
+	OpIncrResult = 0x6
 )
 
 const CurrentVersion = 1
@@ -46,29 +46,33 @@ func PackToWriter(w io.Writer, version uint16, op OpType, data []byte) error {
 }
 
 func (p *Package) Pack(w io.Writer) (err error) {
-	b := make([]byte, 5)
+	b := make([]byte, 6)
 	binary.BigEndian.PutUint16(b, p.Version)
-	b[2] = byte(p.Op)
-	binary.BigEndian.PutUint16(b[3:], p.Length)
+	binary.BigEndian.PutUint16(b[2:], uint16(p.Op))
+	binary.BigEndian.PutUint16(b[4:], p.Length)
 	w.Write(b)
 	w.Write(p.Data)
 	return err
 }
 
 func (p *Package) UnPack(r io.Reader) (err error) {
-	err = binary.Read(r, binary.BigEndian, &p.Version)
+	b := make([]byte, 6)
+	n, err := r.Read(b)
 	if err != nil {
 		return err
 	}
-	err = binary.Read(r, binary.BigEndian, &p.Op)
-	if err != nil {
-		return err
+	if n != 6 {
+		return fmt.Errorf("expected to read %d bytes but got %d bytes", 6, n)
 	}
-	err = binary.Read(r, binary.BigEndian, &p.Length)
-	if err != nil {
-		return err
-	}
+	p.Version = binary.BigEndian.Uint16(b)
+	p.Op = OpType(binary.BigEndian.Uint16(b[2:]))
+	p.Length = binary.BigEndian.Uint16(b[4:])
 	p.Data = make([]byte, p.Length)
-	err = binary.Read(r, binary.BigEndian, &p.Data)
+	if p.Length > 0 {
+		n, err = r.Read(p.Data)
+		if n != 6 {
+			return fmt.Errorf("expected to read %d bytes but got %d bytes", 6, p.Length)
+		}
+	}
 	return err
 }

@@ -11,7 +11,7 @@ func TestNewPackage_Pack(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	err := p.Pack(buf)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, []byte{0, 1, 1, 0, 3, 97, 98, 99}, buf.Bytes())
+	assert.Equal(t, []byte{0, 1, 0, 1, 0, 3, 97, 98, 99}, buf.Bytes())
 }
 
 func TestNewPackageFromReader(t *testing.T) {
