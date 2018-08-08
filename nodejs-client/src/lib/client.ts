@@ -21,9 +21,11 @@ export class Client extends events.EventEmitter {
   protected readonly db: number;
   protected buffer: Buffer = Buffer.alloc(0);
   protected callback: Record<string, Array<[Function, Function]>> = {
+    [protocol.OpType.OpPong]: [],
     [protocol.OpType.OpGetResult]: [],
     [protocol.OpType.OpIncrResult]: [],
   };
+  protected id: number = 0;
 
   constructor(options: Partial<ClientOptions> = {}) {
     super();
@@ -34,8 +36,9 @@ export class Client extends events.EventEmitter {
       this.emit("connect");
     });
     this.socket.on("data", data => {
-      // console.log("on data", data);
+      // console.log("data", data);
       this.buffer = Buffer.concat([this.buffer, data]);
+      // console.log("    ", this.buffer);
       this.processBuffer();
     });
     this.socket.on("error", err => {
@@ -44,31 +47,27 @@ export class Client extends events.EventEmitter {
     this.socket.on("close", () => {
       this.emit("close");
     });
+    this.socket.setNoDelay(true);
   }
 
   protected processBuffer() {
     try {
       while (this.buffer.length > 0) {
-        const { data, rest } = protocol.unpack(this.buffer);
+        const { ok, data, rest } = protocol.unpack(this.buffer);
+        if (!ok) break;
         this.buffer = rest;
         switch (data.op) {
+          case protocol.OpType.OpPing:
+            this.send(protocol.OpType.OpPong, data.data);
+            break;
+          case protocol.OpType.OpPong:
+            this.runCallback(protocol.OpType.OpPong, Date.now() - data.data.readUIntBE(0, 8));
+            break;
           case protocol.OpType.OpGetResult:
-            {
-              const v = data.data.readUInt32BE(0);
-              const fn = this.callback[protocol.OpType.OpGetResult].shift();
-              if (fn) {
-                fn[0](v);
-              }
-            }
+            this.runCallback(protocol.OpType.OpGetResult, data.data.readUInt32BE(0));
             break;
           case protocol.OpType.OpIncrResult:
-            {
-              const v = data.data.readUInt32BE(0);
-              const fn = this.callback[protocol.OpType.OpIncrResult].shift();
-              if (fn) {
-                fn[0](v);
-              }
-            }
+            this.runCallback(protocol.OpType.OpIncrResult, data.data.readUInt32BE(0));
             break;
           default:
           // unknown
@@ -82,15 +81,20 @@ export class Client extends events.EventEmitter {
 
   protected send(op: protocol.OpType, data: Buffer): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.socket.write(
-        protocol.pack({
-          version: 1,
-          op,
-          length: data.length,
-          data,
-        }),
-      );
+      const id = this.id++;
+      const buf = protocol.pack({
+        version: 1,
+        id,
+        op,
+        length: data.length,
+        data,
+      });
+      // console.log("send", buf);
+      this.socket.write(buf);
       switch (op) {
+        case protocol.OpType.OpPing:
+          this.callback[protocol.OpType.OpPong].push([resolve, reject]);
+          break;
         case protocol.OpType.OpGet:
           this.callback[protocol.OpType.OpGetResult].push([resolve, reject]);
           break;
@@ -99,6 +103,19 @@ export class Client extends events.EventEmitter {
           break;
       }
     });
+  }
+
+  protected runCallback(op: protocol.OpType, v: any): boolean {
+    const fn = this.callback[op].shift();
+    if (fn) {
+      fn[0](v);
+      return true;
+    }
+    return false;
+  }
+
+  public ping(): Promise<number> {
+    return this.send(protocol.OpType.OpPing, protocol.uint64ToBuffer(Date.now()));
   }
 
   public incr(ns: string, milliseconds: number, key: string, count: number = 1): Promise<number> {
@@ -139,20 +156,3 @@ function parseServerAddress(str: string): { host: string; port: number } {
   assert(port > 0, `invalid server address format: ${str}`);
   return { host: b[0], port };
 }
-
-async function test() {
-  function sleep(ms: number) {
-    return new Promise(resolve => {
-      setTimeout(resolve, ms);
-    });
-  }
-  const c = new Client();
-  // console.log(c);
-  for (let i = 0; i < Number.MAX_SAFE_INTEGER; i++) {
-    c.incr("hello", 1000, "www").then(console.log);
-    await sleep(0);
-    // c.incr("hello", 199, "www2", 2).then(console.log);
-    // c.incr("hello", 199, "www2", 5).then(console.log);
-  }
-}
-test().catch(console.log);

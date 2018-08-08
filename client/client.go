@@ -19,8 +19,8 @@ type Client struct {
 	currentID        uint32
 	resultGet        chan uint32
 	resultIncr       chan uint32
-	pingMilliseconds uint32
-	resultPing       chan uint32
+	pingMilliseconds uint64
+	resultPing       chan uint64
 }
 
 type Options struct {
@@ -47,7 +47,7 @@ func NewClient(options Options) (*Client, error) {
 		resultGet:        make(chan uint32),
 		resultIncr:       make(chan uint32),
 		pingMilliseconds: 0,
-		resultPing:       make(chan uint32),
+		resultPing:       make(chan uint64),
 	}
 	go c.loop()
 	return &c, nil
@@ -76,7 +76,7 @@ func (c *Client) loop() {
 		case protocol.OpPing:
 			err = c.send(protocol.OpPong, p.Data)
 		case protocol.OpPong:
-			t := protocol.BytesToUint32(p.Data)
+			t := protocol.BytesToUint64(p.Data)
 			c.pingMilliseconds = getMillisecondsTimestamp() - t
 			c.resultPing <- c.pingMilliseconds
 		case protocol.OpGetResult:
@@ -97,8 +97,8 @@ func (c *Client) send(op protocol.OpType, data []byte) error {
 	return protocol.PackToWriter(c.conn, protocol.CurrentVersion, c.currentID, op, data)
 }
 
-func (c *Client) Ping() (r uint32, err error) {
-	err = c.send(protocol.OpPing, protocol.Uint32ToBytes(getMillisecondsTimestamp()))
+func (c *Client) Ping() (r uint64, err error) {
+	err = c.send(protocol.OpPing, protocol.Uint64ToBytes(getMillisecondsTimestamp()))
 	if err != nil {
 		return r, err
 	}
@@ -138,6 +138,6 @@ func (c *Client) IncrN(ns string, key string, milliseconds uint32, count uint32)
 	return r, err
 }
 
-func getMillisecondsTimestamp() uint32 {
-	return uint32(time.Now().UnixNano() / int64(time.Millisecond))
+func getMillisecondsTimestamp() uint64 {
+	return uint64(time.Now().UnixNano() / int64(time.Millisecond))
 }

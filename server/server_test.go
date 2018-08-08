@@ -32,12 +32,36 @@ func TestNewServer(t *testing.T) {
 		v4, err := c.Get("hello", "world", 100)
 		assert.Equal(t, nil, err)
 		assert.Equal(t, uint32(2), v4)
+
+		v5, err := c.Ping()
+		assert.Equal(t, nil, err)
+		assert.Equal(t, true, v5 >= 0)
 	}
 	go testClient(0)
 	go testClient(1)
 
 	time.Sleep(2 * time.Second)
 	s.Close()
+}
+
+func TestServer_Many(t *testing.T) {
+	s, err := NewServer(Options{DatabaseSize: 2, EnableLog: true})
+	defer s.Close()
+	assert.Equal(t, nil, err)
+	go s.Loop()
+
+	c, err := client.NewClient(client.Options{Db: 1})
+	defer c.Close()
+	assert.Equal(t, nil, err)
+
+	for i := 0; i < 100; i++ {
+		v, err := c.Incr("aaa", "abc", 100)
+		assert.Equal(t, nil, err)
+		v2, err := c.Get("aaa", "abc", 100)
+		assert.Equal(t, nil, err)
+		assert.Equal(t, v, v2)
+		assert.Equal(t, true, v > 0)
+	}
 }
 
 func BenchmarkNewServer_Incr(b *testing.B) {

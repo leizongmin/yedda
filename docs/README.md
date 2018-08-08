@@ -14,6 +14,7 @@
 | length | uint16 | 2 | 操作数据长度 |
 | data | buffer | 可变 | 操作数据内容 |
 
+
 | 操作类型 | 值 | 说明 |
 | --- | --- | --- |
 | PING | 0x1 | 发送PING |
@@ -23,21 +24,22 @@
 | INCR | 0x5 | 增加指定Key的技术 |
 | INCR_RESULT | 0x6 | INCR指令的结果 |
 
+
 ### PING / PONG 操作数据结构
 
-包长度 = 8
+包长度 = 64
 
 | 字段名 | 类型 | 长度 | 说明 |
 | --- | --- | --- | --- |
-| time | uint64 | 8 | 当前毫秒时间戳 |
+| time | uint32 | 8 | 当前毫秒时间戳 |
 
 ### GET / INCR 操作数据结构
 
-包长度 = 12 + ns.length + key.length
+包长度 = 14 + ns.length + key.length
 
 | 字段名 | 类型 | 长度 | 说明 |
 | --- | --- | --- | --- |
-| db | uint16 | 2 | 数据库号 |
+| db | uint32 | 4 | 数据库号 |
 | nsLength | uint8 | 1 | 命名空间名称长度，最长255 |
 | ns | buffer | 可变 | 命名空间名称 |
 | milliseconds | uint32 | 4 | 数据有效期毫秒数 |

@@ -8,7 +8,7 @@ import (
 	"net"
 	"sync"
 	"time"
-)
+	)
 
 const DefaultListenNetwork = "tcp"
 const DefaultListenAddress = "127.0.0.1:16789"
