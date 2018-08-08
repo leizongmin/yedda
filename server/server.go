@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
+	"sync"
 	"time"
 )
 
@@ -14,10 +14,12 @@ const DefaultListenNetwork = "tcp"
 const DefaultListenAddress = "127.0.0.1:16789"
 
 type Server struct {
-	listener net.Listener
-	closed   bool
-	service  *service.Service
-	options  Options
+	listener  net.Listener
+	closed    bool
+	service   *service.Service
+	options   Options
+	enableLog bool
+	connMap   *sync.Map
 }
 
 type Options struct {
@@ -46,10 +48,12 @@ func NewServer(options Options) (s *Server, err error) {
 			TimeAccuracy: options.TimeAccuracy,
 			DatabaseSize: options.DatabaseSize,
 		}),
-		options: options,
+		options:   options,
+		enableLog: options.EnableLog,
+		connMap:   &sync.Map{},
 	}
 	if options.EnableLog {
-		log.Printf("server listen on %s", listener.Addr())
+		s.log("[main]", "server listen on %s", listener.Addr())
 	}
 	return s, err
 }
@@ -64,7 +68,7 @@ func (s *Server) Close() error {
 		s.closed = true
 		s.service.Destroy()
 		if s.options.EnableLog {
-			log.Println("server closed")
+			s.log("[main]", "server closed")
 		}
 	}
 	return err
@@ -86,28 +90,25 @@ func (s *Server) Loop() error {
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	addr := conn.RemoteAddr()
-	logger := log.New(os.Stdout, "["+addr.String()+"] ", log.Ltime)
-	enableLog := s.options.EnableLog
-	if enableLog {
-		logger.Println("connected")
-	}
+	s.connMap.Store(addr, conn)
+	defer func() {
+		s.connMap.Delete(addr)
+	}()
+	prefix := "[" + addr.String() + "]"
+	s.log(prefix, "Connected. There are currently %d connections", syncMapLen(s.connMap))
 	for {
 		var err error
 		p, err := protocol.NewPackageFromReader(conn)
 		if err != nil {
-			if enableLog {
-				if err == io.EOF {
-					logger.Println("connection closed")
-				} else {
-					logger.Printf("read error: %s", err)
-				}
+			if err == io.EOF {
+				s.log(prefix, "Connection closed")
+			} else {
+				s.log(prefix, "Read error: %s", err)
 			}
 			break
 		}
 		if p.Version != protocol.CurrentVersion {
-			if enableLog {
-				logger.Printf("ignore protocol version %d", p.Version)
-			}
+			s.log(prefix, "Ignore protocol version %d", p.Version)
 			continue
 		}
 		switch p.Op {
@@ -128,18 +129,32 @@ func (s *Server) handleConnection(conn net.Conn) {
 				err = s.reply(conn, p.ID, protocol.OpIncrResult, protocol.Uint32ToBytes(c))
 			}
 		default:
-			if enableLog {
-				logger.Printf("unknown op type %+v", p)
-			}
+			s.log(prefix, "Unknown op type %+v", p)
 		}
-		if enableLog {
-			if err != nil {
-				logger.Printf("unexpected error: %s", err)
-			}
+		if err != nil {
+			s.log(prefix, "Unexpected error: %s", err)
 		}
 	}
 }
 
 func (s *Server) reply(conn net.Conn, id uint32, op protocol.OpType, data []byte) error {
 	return protocol.PackToWriter(conn, protocol.CurrentVersion, id, op, data)
+}
+
+func (s *Server) log(prefix string, format string, v ...interface{}) {
+	if s.enableLog {
+		if len(prefix) > 0 {
+			format = prefix + " " + format
+		}
+		log.Printf(format, v...)
+	}
+}
+
+func syncMapLen(m *sync.Map) int {
+	length := 0
+	m.Range(func(_, _ interface{}) bool {
+		length++
+		return true
+	})
+	return length
 }
