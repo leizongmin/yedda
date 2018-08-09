@@ -2,6 +2,25 @@
 
 简单限流计数服务器
 
+## 使用方法
+
+ ```bash
+slimiter -h
+Usage:
+  -accuracy uint
+        time accuracy (ms) (default 100)
+  -listen string
+        listen address (default "127.0.0.1:16789")
+  -listen-type string
+        listen type, 'tcp' OR 'unix' (default "tcp")
+  -log
+        enable log (default true)
+  -size uint
+        how many database (default 256)
+
+slimiter -log=true -listen-type=unix -listen=./listen.sock -size=256 -accuracy=100
+ ```
+
 ## License
 
 ```text
