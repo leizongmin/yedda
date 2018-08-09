@@ -57,7 +57,8 @@ func NewServer(options Options) (s *Server, err error) {
 		connMap:   &sync.Map{},
 	}
 	s.Log("[main]", "server version: %s, protocol version: %d", Version, protocol.CurrentVersion)
-	s.Log("[main]", "dbsize: %d, ", options.DatabaseSize)
+	s.Log("[main]", "dbsize: %d, accuracy: %s", options.DatabaseSize, options.TimeAccuracy)
+	s.Log("[main]", "network: %s, address: %s", options.Network, options.Address)
 	s.Log("[main]", "server listen on %s", listener.Addr())
 	return s, err
 }

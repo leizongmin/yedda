@@ -29,12 +29,17 @@ export class Client extends events.EventEmitter {
 
   constructor(options: Partial<ClientOptions> = {}) {
     super();
-    const { host, port } = parseServerAddress(options.server || DEFAULT_ADDRESS);
+    const { tcp, host, port } = parseServerAddress(options.server || DEFAULT_ADDRESS);
     this.db = options.db || 0;
     assert(this.db >= 0, `invalid db number: ${this.db}`);
-    this.socket = net.createConnection(port, host, () => {
+    const onConnect = () => {
       this.emit("connect");
-    });
+    };
+    if (tcp) {
+      this.socket = net.createConnection(port, host, onConnect);
+    } else {
+      this.socket = net.createConnection(host, onConnect);
+    }
     this.socket.on("data", data => {
       // console.log("data", data);
       this.buffer = Buffer.concat([this.buffer, data]);
@@ -149,10 +154,11 @@ export class Client extends events.EventEmitter {
   }
 }
 
-function parseServerAddress(str: string): { host: string; port: number } {
+function parseServerAddress(str: string): { tcp: boolean; host: string; port: number } {
   const b = str.split(":");
+  if (b.length === 1) return { tcp: false, host: str, port: 0 };
   assert(b.length === 2, `invalid server address format: ${str}`);
   const port = Number(b[1]);
   assert(port > 0, `invalid server address format: ${str}`);
-  return { host: b[0], port };
+  return { tcp: true, host: b[0], port };
 }
