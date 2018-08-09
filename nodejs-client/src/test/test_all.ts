@@ -43,10 +43,10 @@ describe("client", function() {
   it("get & incr", async function() {
     this.timeout(10000);
     const c = new Client();
-    expect(await c.incr("hello", 199, "www2", 2)).to.equal(2);
-    expect(await c.incr("hello", 200, "www2", 1)).to.equal(1);
-    expect(await c.incr("hello", 199, "www2", 2)).to.equal(4);
-    expect(await c.incr("hello", 199, "www2", 1)).to.equal(5);
+    expect(await c.incr("hello", "www2", 199, 2)).to.equal(2);
+    expect(await c.incr("hello", "www2", 200, 1)).to.equal(1);
+    expect(await c.incr("hello", "www2", 199, 2)).to.equal(4);
+    expect(await c.incr("hello", "www2", 199, 1)).to.equal(5);
     c.close();
   });
 
@@ -56,7 +56,7 @@ describe("client", function() {
     const list = [];
     const N = 10000;
     for (let i = 0; i < N; i++) {
-      list.push(c.incr("hello", 1000, "www"));
+      list.push(c.incr("hello", "www", 1000));
     }
     const ret = await Promise.all(list);
     expect(ret.length).to.equal(N);

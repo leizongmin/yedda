@@ -118,7 +118,7 @@ export class Client extends events.EventEmitter {
     return this.send(protocol.OpType.OpPing, protocol.uint64ToBuffer(Date.now()));
   }
 
-  public incr(ns: string, milliseconds: number, key: string, count: number = 1): Promise<number> {
+  public incr(ns: string, key: string, milliseconds: number, count: number = 1): Promise<number> {
     return this.send(
       protocol.OpType.OpIncr,
       protocol.packCmdArg({
@@ -131,7 +131,7 @@ export class Client extends events.EventEmitter {
     );
   }
 
-  public get(ns: string, milliseconds: number, key: string): Promise<number> {
+  public get(ns: string, key: string, milliseconds: number): Promise<number> {
     return this.send(
       protocol.OpType.OpGet,
       protocol.packCmdArg({
