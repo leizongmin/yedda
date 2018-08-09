@@ -14,7 +14,7 @@ func main() {
 	flag.StringVar(&options.Address, "listen", server.DefaultListenAddress, "listen address")
 	flag.BoolVar(&options.EnableLog, "log", true, "enable log")
 	var dbSize, timeAccuracy uint64
-	flag.Uint64Var(&dbSize, "size", 1, "how many database")
+	flag.Uint64Var(&dbSize, "size", 256, "how many database")
 	flag.Uint64Var(&timeAccuracy, "accuracy", 100, "time accuracy (ms)")
 	flag.Parse()
 
