@@ -1,4 +1,4 @@
-module github.com/leizongmin/simple-limiter-service
+module github.com/leizongmin/yedda
 
 require (
 	github.com/davecgh/go-spew v1.1.0

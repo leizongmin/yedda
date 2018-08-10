@@ -1,7 +1,7 @@
 #!/bin/sh
 
-PACKAGE=./cmd/slimiter-server/
-RELEASE_PATH=release/slimiter-server
+PACKAGE=./cmd/yedda/
+RELEASE_PATH=release/yedda
 
 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 vgo build -o $RELEASE_PATH-darwin $PACKAGE
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 vgo build -o $RELEASE_PATH-linux $PACKAGE

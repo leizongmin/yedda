@@ -1,14 +1,14 @@
 package server
 
 import (
-	"github.com/leizongmin/simple-limiter-service/protocol"
-	"github.com/leizongmin/simple-limiter-service/service"
+	"github.com/leizongmin/yedda/protocol"
+	"github.com/leizongmin/yedda/service"
 	"io"
 	"log"
 	"net"
 	"sync"
 	"time"
-	)
+)
 
 const DefaultListenNetwork = "tcp"
 const DefaultListenAddress = "127.0.0.1:16789"

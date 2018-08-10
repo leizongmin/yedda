@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/leizongmin/simple-limiter-service/client"
+	"github.com/leizongmin/yedda/client"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"

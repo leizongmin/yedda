@@ -1,8 +1,8 @@
-import { Client } from "../lib/client";
+import {Client} from "../lib/client";
 import Benchmark from "@leizm/benchmark";
 
 async function main() {
-  const bench = new Benchmark({ title: "test slimiter", seconds: 10, delay: 1 });
+    const bench = new Benchmark({title: "test yedda", seconds: 10, delay: 1});
   const c = new Client();
 
   const namespaces = "+"

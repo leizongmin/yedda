@@ -1,12 +1,12 @@
 /**
- * @leizm/slimiter-client
+ * @leizm/yedda
  *
  * @author Zongmin Lei <leizongmin@gmail.com>
  */
 
-import { expect } from "chai";
-import { IPackage, ICmdArg, pack, unpack, packCmdArg, unpackCmdArg } from "../lib/protocol";
-import { Client } from "../lib/client";
+import {expect} from "chai";
+import {ICmdArg, IPackage, pack, packCmdArg, unpack, unpackCmdArg} from "../lib/protocol";
+import {Client} from "../lib/client";
 
 function sleep(ms: number) {
   return new Promise(resolve => {

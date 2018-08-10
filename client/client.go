@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/leizongmin/simple-limiter-service/protocol"
-	"github.com/leizongmin/simple-limiter-service/service"
+	"github.com/leizongmin/yedda/protocol"
+	"github.com/leizongmin/yedda/service"
 	"log"
 	"net"
 	"strings"

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/leizongmin/simple-limiter-service/core"
+	"github.com/leizongmin/yedda/core"
 	"time"
 )
 

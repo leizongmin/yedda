@@ -1,11 +1,11 @@
-# simple-limiter-service
+# yedda
 
 简单限流计数服务器
 
 ## 使用方法
 
- ```bash
-slimiter -h
+```bash
+yedda -h
 Usage:
   -accuracy uint
         time accuracy (ms) (default 100)
@@ -14,12 +14,24 @@ Usage:
   -listen-type string
         listen type, 'tcp' OR 'unix' (default "tcp")
   -log
-        enable log (default true)
+        enable log output (default true)
   -size uint
         how many database (default 256)
+```
 
-slimiter -log=true -listen-type=unix -listen=./listen.sock -size=256 -accuracy=100
- ```
+监听 Unix Socket 方式启动（推荐）：
+
+```bash
+yedda -log=true -listen-type=unix -listen=./listen.sock -size=256 -accuracy=100
+```
+ 
+ ## 编译
+ 
+```bash
+git clone https://github.com/leizongmin/yedda.git
+cd yedda
+./build.sh 
+```
 
 ## License
 

@@ -1,5 +1,5 @@
 /**
- * @leizm/slimiter-client
+ * @leizm/yedda
  *
  * @author Zongmin Lei <leizongmin@gmail.com>
  */
