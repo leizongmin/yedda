@@ -21,7 +21,7 @@
 | PONG | 0x2 | 回应PING |
 | GET | 0x3 | 查询指定Key的当前计数 |
 | GET_RESULT | 0x4 | GET指令的结果 |
-| INCR | 0x5 | 增加指定Key的技术 |
+| INCR | 0x5 | 增加指定Key的计数 |
 | INCR_RESULT | 0x6 | INCR指令的结果 |
 
 
