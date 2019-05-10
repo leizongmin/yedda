@@ -24,7 +24,7 @@ func main() {
 
 	s, err := server.NewServer(options)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	if options.EnableLog {
 		go func() {
@@ -39,5 +39,8 @@ func main() {
 			}
 		}()
 	}
-	s.Loop()
+	err = s.Loop()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
